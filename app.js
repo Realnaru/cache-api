@@ -1,16 +1,30 @@
 import express from 'express'
 import bodyParser from 'body-parser';
 import mongoose from 'mongoose';
+import ttl from 'mongoose-ttl';
 
 const app = express();
 app.use(bodyParser.urlencoded({extended: true}));
 
 mongoose.connect('mongodb://localhost:27017/cacheDb');
 
+const onReapCallback = () => {
+    const newString = new RandomString({
+        key: generateRandomString(7),
+        data: generateRandomString(10),
+    });
+    newString.save((err) => {
+        if (err)
+            console.log(err);
+    });
+}
+
 const stringSchema = new mongoose.Schema({
     key: { type: String, unique: true, required: true },
     data: String,
-})
+});
+stringSchema.plugin(ttl, {ttl: '5m', onReap: onReapCallback});
+
 
 const RandomString = mongoose.model('String', stringSchema);
 
@@ -20,6 +34,7 @@ app.route('/randomStrings')
     .get( (req, res) => {
         RandomString.find((error, foundStrings) => {
             if (!error) {
+                foundStrings.forEach(string => string.resetTTL());
                 res.send(foundStrings);
             } else {
                 res.send(error);
@@ -52,6 +67,7 @@ app.route('/randomStrings/:key')
             if (!err) {
                 if (foundString) {
                     console.log('Cache hit');
+                    foundString.resetTTL();
                     res.send(foundString);
                 } else {
                     console.log('Cache miss');
