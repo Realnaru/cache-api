@@ -2,6 +2,7 @@ import express from 'express'
 import bodyParser from 'body-parser';
 import mongoose from 'mongoose';
 import ttl from 'mongoose-ttl';
+import {EntityLimit} from "./constants/entityLimit.js";
 
 const app = express();
 app.use(bodyParser.urlencoded({extended: true}));
@@ -43,6 +44,16 @@ app.route('/randomStrings')
     })
     //POST
     .post((req, res) => {
+        //if entities limit reached, delete the oldest entity
+       const entities = RandomString.find().sort({__ttl: -1});//find all, sort by ttl
+       const id = entities.count((err, count) => {
+           if (count === EntityLimit) {
+               return entities[0]._id;
+           }
+       });//if limit reached return first entity id
+       if (id) {
+           RandomString.findByIdAndDelete(id);//delete the entity
+       }
         const newString = new RandomString({
             key: req.body.key,
             data: req.body.data,
