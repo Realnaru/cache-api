@@ -1,0 +1,11 @@
+{
+  "moduleFileExtensions": ["js", "json"],
+  "rootDir": ".",
+  "testEnvironment": "node",
+  "coverageReporters" : ["json"],
+  "coveragePathIgnorePatterns": [
+    ".module.ts$",
+    ".spec.ts$"
+  ],
+  "testRegex": ".e2e-spec.js$"
+}
